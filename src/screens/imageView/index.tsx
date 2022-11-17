@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Image,
   SafeAreaView,
@@ -7,11 +7,13 @@ import {
   Text,
   TouchableOpacity,
   Modal,
+  Platform,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
 import ReactNativeZoomableView from "@dudigital/react-native-zoomable-view/src/ReactNativeZoomableView";
 import { Barcode } from "vision-camera-code-scanner";
+import { ModalView } from 'react-native-ios-modal';
 
 import { getThemeStyles } from "./styles";
 import { QRScanner } from "../../components"
@@ -25,6 +27,8 @@ interface ImageViewScreenRouteParams {
 }
 
 const ImageViewScreen = ({ route }: ListScreenNavigationProp) => {
+  const iosModalRef = useRef<ModalView>(null);
+
   const isDarkMode = useColorScheme() === "dark";
   const styles = getThemeStyles(isDarkMode);
 
@@ -36,17 +40,25 @@ const ImageViewScreen = ({ route }: ListScreenNavigationProp) => {
 
 
   const handlePressAdd = () => {
-    setQrScannerVisibilityState(true);
+    if (Platform.OS === "ios") {
+      iosModalRef.current.setVisibility(true)
+    } else {
+      setQrScannerVisibilityState(true);
+    }
   }
 
   const handleCloseQrScanner = () => {
-    setQrScannerVisibilityState(false);
+    if (Platform.OS === "ios") {
+      iosModalRef.current.setVisibility(false)
+    } else {
+      setQrScannerVisibilityState(false);
+    }
   }
 
   const onScanQrSuccess = (value: Barcode) => {
     if (value && value.displayValue) {
       setQrResults([...qrResults, value.displayValue])
-      setQrScannerVisibilityState(false);
+      handleCloseQrScanner();
     }
   }
 
@@ -75,14 +87,28 @@ const ImageViewScreen = ({ route }: ListScreenNavigationProp) => {
           </TouchableOpacity>
         </View>
       </View>
-      <Modal visible={qrScannerVisible} transparent={true} animationType="slide">
-        <View style={styles.modalContainer}>
-          <TouchableOpacity onPress={handleCloseQrScanner} style={{ margin: 15 }}>
-            <Text style={styles.cancelBtn}>Cancel</Text>
-          </TouchableOpacity>
-          <QRScanner onSuccess={onScanQrSuccess} />
-        </View>
-      </Modal>
+      {
+        Platform.OS === "ios" &&
+        <ModalView ref={iosModalRef}>
+          <View style={styles.iosModalContainer}>
+            <TouchableOpacity onPress={handleCloseQrScanner} style={{ margin: 15 }}>
+              <Text style={styles.cancelBtn}>Cancel</Text>
+            </TouchableOpacity>
+            <QRScanner onSuccess={onScanQrSuccess} />
+          </View>
+        </ModalView>
+      }
+      {
+        Platform.OS === "android" &&
+        <Modal visible={qrScannerVisible} transparent={true} animationType="slide">
+          <View style={styles.modalContainer}>
+            <TouchableOpacity onPress={handleCloseQrScanner} style={{ margin: 15 }}>
+              <Text style={styles.cancelBtn}>Cancel</Text>
+            </TouchableOpacity>
+            <QRScanner onSuccess={onScanQrSuccess} />
+          </View>
+        </Modal>
+      }
     </SafeAreaView>
   );
 };

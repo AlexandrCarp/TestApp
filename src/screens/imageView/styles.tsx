@@ -38,6 +38,10 @@ const baseStyles = StyleSheet.create({
     shadowOpacity: 0.2,
     elevation: 4,
   },
+  iosModalContainer: {
+    backgroundColor: Colors.zircon,
+    flex: 1,
+  },
   cancelBtn: {
     fontSize: 20,
     color: Colors.amaranth
